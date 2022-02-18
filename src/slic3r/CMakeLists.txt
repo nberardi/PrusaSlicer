@@ -47,6 +47,7 @@ set(SLIC3R_GUI_SOURCES
     GUI/Gizmos/GLGizmoSlaSupports.hpp
     GUI/Gizmos/GLGizmoFdmSupports.cpp
     GUI/Gizmos/GLGizmoFdmSupports.hpp
+    GUI/Gizmos/Experiment.cpp
     GUI/Gizmos/GLGizmoFlatten.cpp
     GUI/Gizmos/GLGizmoFlatten.hpp
     GUI/Gizmos/GLGizmoCut.cpp

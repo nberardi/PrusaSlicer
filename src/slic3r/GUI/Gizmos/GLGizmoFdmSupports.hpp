@@ -3,6 +3,8 @@
 
 #include "GLGizmoPainterBase.hpp"
 
+#include "Experiment.cpp"
+
 namespace Slic3r::GUI {
 
 class GLGizmoFdmSupports : public GLGizmoPainterBase

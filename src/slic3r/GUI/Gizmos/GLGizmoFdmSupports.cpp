@@ -347,6 +347,12 @@ void GLGizmoFdmSupports::select_facets_by_angle(float threshold_deg, bool block)
 
         float dot_limit = limit.dot(down);
 
+
+        indexed_triangle_set mesh_triangles = mv->mesh().its;
+        its_transform(mesh_triangles, mi->get_matrix(true));
+        do_experimental_support_placement(std::move(mesh_triangles), m_triangle_selectors[mesh_id].get());
+
+        if (false) {
         // Now calculate dot product of vert_direction and facets' normals.
         int idx = 0;
         const indexed_triangle_set &its = mv->mesh().its;
@@ -356,6 +362,7 @@ void GLGizmoFdmSupports::select_facets_by_angle(float threshold_deg, bool block)
                 m_triangle_selectors.back()->request_update_render_data();
             }
             ++ idx;
+        }
         }
     }
 
