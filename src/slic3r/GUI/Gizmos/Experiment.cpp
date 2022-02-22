@@ -26,6 +26,7 @@ struct Triangle {
     float strength { 0.0 };
     bool supports = false;
     bool visited = false;
+    bool gathering_supports = false;
 };
 
 inline float face_area(const stl_vertex vertex[3]) {
@@ -43,7 +44,7 @@ inline float its_face_area(const indexed_triangle_set &its, const int face_idx)
 }
 
 struct SupportPlacerMesh {
-    const float supportable_area_budget = 200000.0;
+    const float gather_phase_target = 3.0;
 
     indexed_triangle_set mesh;
     std::vector<Triangle> triangles;
@@ -85,47 +86,48 @@ struct SupportPlacerMesh {
                 });
     }
 
+    const float calculate_support_cost(float dot_product, size_t index_in_its) const {
+        float dot_pow = dot_product * dot_product;
+        float weight = (1.0 / (-1.2 * dot_pow + 2)) - 0.5;
+        return weight * its_face_area(mesh, index_in_its);
+    }
+
     void find_support_areas() {
         for (const size_t &current_index : triangle_indexes_by_z) {
             Triangle &current = triangles[current_index];
-            float dot_product = current.normal.dot(Vec3f::UnitZ());
+            float dot_product = current.normal.dot(-Vec3f::UnitZ());
 
-            std::cout << "EXP: dot_product :   " << dot_product << std::endl;
-
-            if (dot_product >= 0) {
-                current.strength = supportable_area_budget;
+            if (dot_product < 0.2) {
+                current.strength = gather_phase_target * 100.0;
                 current.visited = true;
                 current.supports = false;
             } else {
+                float neighbours_strength_sum = 0;
                 for (const auto &neighbour_index : current.neighbours) {
                     const Triangle &neighbour = triangles[neighbour_index];
                     if (!neighbour.visited) {
                         //not visited yet, ignore
                         continue;
                     } else {
-                        std::cout << "EXP: neighbour visited  " << std::endl;
-
-                        float support_cost = -dot_product * dot_product * dot_product
-                                * its_face_area(mesh, current.index_in_its);
-                        std::cout << "EXP: support_cost:  " << support_cost << std::endl;
-
-                        std::cout << "EXP: neighbour strength  " << neighbour.strength << std::endl;
-                        if (neighbour.strength < support_cost) {
+                        neighbours_strength_sum += neighbour.strength;
+                        float support_cost = calculate_support_cost(dot_product, current.index_in_its);
+                        if (neighbour.gathering_supports || neighbour.strength < support_cost) {
                             continue;
                         } else {
                             current.strength = neighbour.strength - support_cost;
                             current.visited = true;
                             current.supports = false;
+                            current.gathering_supports = false;
                             break;
                         }
                     }
                 }
 
                 if (!current.visited) {
-                    std::cout << "EXP: suports enforced  " << std::endl;
                     current.supports = true;
                     current.visited = true;
-                    current.strength = its_face_area(mesh, current.index_in_its);
+                    current.strength = neighbours_strength_sum + its_face_area(mesh, current.index_in_its);
+                    current.gathering_supports = current.strength < gather_phase_target;
                 }
             }
         }
